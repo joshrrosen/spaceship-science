@@ -1,8 +1,8 @@
 // js/search.js
 
-// 1) Three.js + OrbitControls
+// 1) Three.js + OrbitControls (via esm.sh for proper module resolution)
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'https://esm.sh/three@0.152.2/examples/jsm/controls/OrbitControls.js';
 // 2) Fuse.js ES-module build
 import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.mjs';
 // 3) Tween.js ES-module build

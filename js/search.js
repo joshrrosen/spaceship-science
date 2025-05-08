@@ -1,8 +1,7 @@
 // js/search.js
 
-// 1) Three.js + OrbitControls (via esm.sh for proper module resolution)
+// 1) Three.js
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
-import { OrbitControls } from 'https://esm.sh/three@0.152.2/examples/jsm/controls/OrbitControls.js';
 // 2) Fuse.js ES-module build
 import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.mjs';
 // 3) Tween.js ES-module build
@@ -30,8 +29,8 @@ async function main() {
   // Load scene & data
   await initScene();
 
-  // Set up OrbitControls
-  controls = new OrbitControls(camera, renderer.domElement);
+  // Set up OrbitControls (loaded globally in HTML)
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.enableZoom = true;

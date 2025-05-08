@@ -16,31 +16,31 @@
 
   <!-- Three.js + main scene loader (ES modules) -->
 <script type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
   import { initScene, renderScene, camera } from './js/main.js';
 
-  let velocity = new THREE.Vector3(0, 0, -0.35);   // constant forward speed
-  let t = 0;                                       // for a gentle sway
+  let velocity = new THREE.Vector3(0, 0, -0.3);   // move forward in Z
+  let t = 0;
 
   (async function () {
-    await initScene();            // loads points
+    await initScene();
     animate();
   })();
 
   function animate() {
     requestAnimationFrame(animate);
 
-    /* optional slow wobble so we’re not on a straight rail */
-    t += 0.0006;
-    camera.position.x = 30 * Math.sin(t * 0.8);
-    camera.position.y = 20 * Math.sin(t * 1.5);
-
-    /* fly forward along -Z */
+    // optional gentle sway
+    t += 0.001;
+    camera.position.x = 30 * Math.sin(t * 0.5);
+    camera.position.y = 20 * Math.sin(t * 0.9);
     camera.position.add(velocity);
 
-    camera.lookAt(0, 0, 0);       // always look toward galaxy centre
+    camera.lookAt(0, 0, 0);
     renderScene();
   }
 </script>
+
 
 </body>
 </html>

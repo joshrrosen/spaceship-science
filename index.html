@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Starship Science — Fly Mode</title>
+
+  <!-- global styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- 3-D canvas -->
+  <canvas id="canvas"></canvas>
+
+  <!-- simple nav link to search mode -->
+  <a id="to-search" href="search.html">Search / Explore →</a>
+
+  <!-- Three.js + main scene loader (ES modules) -->
+  <script type="module">
+    import { initScene, renderScene, camera } from './js/main.js';
+
+    let t = 0;                           // animation clock
+
+    (async function startup () {
+      await initScene();                 // load data, build points
+      animate();
+    })();
+
+    function animate () {
+      requestAnimationFrame(animate);
+
+      /* simple circular fly-path around (0,0,0) */
+      t += 0.0005;
+      camera.position.x = 120 * Math.cos(t);
+      camera.position.y = 120 * Math.sin(t);
+      camera.position.z = 40 * Math.sin(t * 0.7);
+      camera.lookAt(0, 0, 0);
+
+      renderScene();
+    }
+  </script>
+</body>
+</html>

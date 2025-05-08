@@ -1,7 +1,8 @@
 // js/search.js
 
-// 1) Three.js
+// 1) Three.js + OrbitControls
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
 // 2) Fuse.js ES-module build
 import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.mjs';
 // 3) Tween.js ES-module build
@@ -21,12 +22,20 @@ import {
 let fuse;
 let selectedIndex = null;
 let trajLines = null;
+let controls;
 const raycaster = new THREE.Raycaster();
 const mouse     = new THREE.Vector2();
 
 async function main() {
   // Load scene & data
   await initScene();
+
+  // Set up OrbitControls
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.enableZoom = true;
+  controls.enablePan = false;
 
   // Start render + tween loop
   requestAnimationFrame(tick);
@@ -35,13 +44,14 @@ async function main() {
   fuse = new Fuse(paperData, { keys: ['title'], threshold: 0.3 });
 
   // Wire up UI
-  document.getElementById('search-btn').onclick  = onSearch;
+  document.getElementById('search-btn').onclick   = onSearch;
   document.getElementById('traj-toggle').onchange = updateTrajectory;
   window.addEventListener('click', onCanvasClick);
 }
 
 function tick(time) {
   requestAnimationFrame(tick);
+  controls.update();              // update orbit controls
   TWEEN.update(time);
   renderScene();
 }

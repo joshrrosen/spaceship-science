@@ -2,17 +2,13 @@
 
 // 1) Three.js core
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
-// 2) OrbitControls via esm.sh (rewrites bare imports)
+// 2) OrbitControls via esm.sh
 import { OrbitControls } from 'https://esm.sh/three@0.152.2/examples/jsm/controls/OrbitControls.js';
 // 3) Fuse.js
 import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.mjs';
 // 4) Tween.js
 import TWEEN from 'https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@18.6.4/dist/tween.esm.js';
 // 5) Shared scene setup
-import { initScene, renderScene, scene, camera, renderer, points, paperData } from './main.js';
-
-
-// 4) Shared scene setup / data from main.js
 import {
   initScene,
   renderScene,
@@ -34,8 +30,8 @@ async function main() {
   // Load scene & data
   await initScene();
 
-  // Set up OrbitControls (loaded globally in HTML)
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  // Initialize OrbitControls (use imported class)
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.enableZoom = true;

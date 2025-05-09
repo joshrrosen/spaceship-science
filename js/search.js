@@ -138,4 +138,27 @@ function updateTrajectory() {
   scene.add(trajLines);
 }
 
+// top-level state
+ let highlight = null;   // <—— new
+
+function selectPaper(idx) {
++  // ── highlight the chosen star ─────────────────────────────
++  if (highlight) {                     // remove previous
++    scene.remove(highlight);
++    highlight.geometry.dispose();
++    highlight.material.dispose();
++  }
++  const p = paperData[idx];
++  const markerGeo = new THREE.SphereGeometry(2.5, 16, 16);   // small sphere
++  const markerMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
++  highlight = new THREE.Mesh(markerGeo, markerMat);
++  highlight.position.set(p.x * 100, p.y * 100, p.z * 100);
++  scene.add(highlight);
+
+   selectedIndex = idx;
+-  const p = paperData[idx];
+   /* … existing tween / info-panel code … */
+}
+
+
 main();

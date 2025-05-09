@@ -73,6 +73,17 @@ export async function initScene() {
   points = new THREE.Points(geom, mat);
   scene.add(points);
 
+// ── auto-centre camera ─────────────────────────────────────────────
+const box   = new THREE.Box3().setFromObject(points);
+const ctr   = new THREE.Vector3();
+box.getCenter(ctr);                 // galaxy centre
+const size  = box.getSize(new THREE.Vector3()).length();
+camera.far  = size * 2;             // extend far-plane
+camera.updateProjectionMatrix();
+camera.position.copy(ctr).add(new THREE.Vector3(0, 0, size * 0.4));
+camera.lookAt(ctr);
+
+
   /* -- handle resize ---------------------------------------------- */
   window.addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight;

@@ -17,29 +17,24 @@
   <!-- Three.js + main scene loader (ES modules) -->
 <script type="module">
   import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
-  import { initScene, renderScene, camera } from './js/main.js';
+  import { initScene, renderScene, camera, galaxyCenter } from './js/main.js';
 
-  let velocity = new THREE.Vector3(0, 0, -0.3);   // move forward in Z
+  let velocity = new THREE.Vector3(0,0,-0.3);
   let t = 0;
 
-  (async function () {
-    await initScene();
-    animate();
-  })();
+  (async ()=>{ await initScene(); animate(); })();
 
-  function animate() {
+  function animate(){
     requestAnimationFrame(animate);
-
-    // optional gentle sway
     t += 0.001;
-    camera.position.x = 30 * Math.sin(t * 0.5);
-    camera.position.y = 20 * Math.sin(t * 0.9);
+    camera.position.x = galaxyCenter.x + 30*Math.sin(t*0.5);
+    camera.position.y = galaxyCenter.y + 20*Math.sin(t*0.9);
     camera.position.add(velocity);
-
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(galaxyCenter);
     renderScene();
   }
 </script>
+
 
 
 </body>

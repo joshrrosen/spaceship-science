@@ -1,87 +1,77 @@
 // js/search.js
-
-// 1) Three.js core
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
-// 2) OrbitControls via esm.sh
 import { OrbitControls } from 'https://esm.sh/three@0.152.2/examples/jsm/controls/OrbitControls.js';
-// 3) Fuse.js
 import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.mjs';
-// 4) Tween.js
 import TWEEN from 'https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@18.6.4/dist/tween.esm.js';
-// 5) Shared scene setup
+
 import {
-  initScene,
-  renderScene,
-  scene,
-  camera,
-  renderer,
-  points,
-  paperData
+  initScene, renderScene,
+  scene, camera, renderer, points, paperData
 } from './main.js';
 
 let fuse;
 let selectedIndex = null;
-let trajLines = null;
+let trajGroup = null;
+let highlight  = null;                 // yellow marker sphere
 let controls;
 const raycaster = new THREE.Raycaster();
 const mouse     = new THREE.Vector2();
 
 async function main() {
-  // Load scene & data
   await initScene();
 
-  // Initialize OrbitControls (use imported class)
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.enableZoom = true;
-  controls.enablePan = false;
 
-  // Start render + tween loop
-  requestAnimationFrame(tick);
-
-  // Setup Fuse.js on loaded paperData
   fuse = new Fuse(paperData, { keys: ['title'], threshold: 0.3 });
 
-  // Wire up UI
   document.getElementById('search-btn').onclick   = onSearch;
   document.getElementById('traj-toggle').onchange = updateTrajectory;
   window.addEventListener('click', onCanvasClick);
+
+  requestAnimationFrame(tick);
 }
 
-function tick(time) {
+function tick(t) {
   requestAnimationFrame(tick);
-  controls.update();              // update orbit controls
-  TWEEN.update(time);
+  controls.update();
+  TWEEN.update(t);
   renderScene();
 }
 
 function onSearch() {
   const q = document.getElementById('search-input').value.trim();
   if (!q) return;
-  const results = fuse.search(q);
-  if (!results.length) return;
-  selectPaper(results[0].refIndex);
+  const hit = fuse.search(q)[0];
+  if (hit) selectPaper(hit.refIndex);
 }
 
-function onCanvasClick(event) {
-  // Normalize mouse coords
+function onCanvasClick(e) {
   const rect = renderer.domElement.getBoundingClientRect();
-  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((event.clientY - rect.top)  / rect.height) * 2 + 1;
-
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObject(points);
-  if (hits.length) selectPaper(hits[0].index);
+  const hit = raycaster.intersectObject(points)[0];
+  if (hit) selectPaper(hit.index);
 }
 
+/* ── central function: fly, highlight, info, trajectory ──────────────── */
 function selectPaper(idx) {
   selectedIndex = idx;
   const p = paperData[idx];
 
-  // Tween camera to paper
+  /* highlight star */
+  if (highlight) scene.remove(highlight);
+  highlight = new THREE.Mesh(
+    new THREE.SphereGeometry(2.5, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+  );
+  highlight.position.set(p.x*100, p.y*100, p.z*100);
+  scene.add(highlight);
+
+  /* fly camera */
   new TWEEN.Tween(camera.position)
-    .to({ x: p.x * 100, y: p.y * 100, z: p.z * 100 + 20 }, 800)
+    .to({ x:p.x*100, y:p.y*100, z:p.z*100+20 }, 800)
     .easing(TWEEN.Easing.Cubic.Out)
     .start();
 
@@ -89,76 +79,36 @@ function selectPaper(idx) {
   updateTrajectory();
 }
 
+/* side-panel info */
 function showInfo(p) {
   const panel = document.getElementById('info-panel');
   panel.innerHTML = `
     <h2>${p.title}</h2>
     <p>${(p.abstract||'').slice(0,200)}…</p>
     <h3>Related</h3>
-    <ul>
-      ${p.neighbors.map(i =>
-        `<li data-idx="${i}">${paperData[i].title}</li>`
-      ).join('')}
-    </ul>
-    <h3>Citations</h3>
-    <button id="load-cites">Load citing</button>
-    <ul id="cites-list"></ul>
-  `;
+    <ul>${p.neighbors.map(i=>`<li data-idx="${i}">${paperData[i].title}</li>`).join('')}</ul>`;
   panel.querySelectorAll('li[data-idx]').forEach(li=>{
-    li.onclick = () => selectPaper(+li.dataset.idx);
+    li.onclick = ()=>selectPaper(+li.dataset.idx);
   });
-  document.getElementById('load-cites').onclick = loadCitations;
 }
 
-async function loadCitations() {
-  const p = paperData[selectedIndex];
-  const list = document.getElementById('cites-list');
-  list.innerHTML = 'Loading…';
-  const url = `https://api.openalex.org/works/${encodeURIComponent(p.id)}/citing_works?per_page=5`;
-  const res = await fetch(url).then(r=>r.json());
-  list.innerHTML = res.results.map(w =>
-    `<li>${w.title}</li>`
-  ).join('');
-}
-
+/* draw / clear author trajectories */
 function updateTrajectory() {
-  if (trajLines) {
-    scene.remove(trajLines);
-    trajLines.geometry.dispose();
-    trajLines.material.dispose();
-    trajLines = null;
-  }
+  if (trajGroup) { scene.remove(trajGroup); trajGroup=null; }
   if (!document.getElementById('traj-toggle').checked || selectedIndex===null) return;
 
-  const traj = paperData[selectedIndex].author_trajectory || [];
-  const pts = traj.map(pt => new THREE.Vector3(pt.x*100, pt.y*100, pt.z*100));
-  const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  const mat = new THREE.LineBasicMaterial({ linewidth: 2 });
-  trajLines = new THREE.Line(geo, mat);
-  scene.add(trajLines);
+  const trajDict = paperData[selectedIndex].author_traj || {};
+  const group = new THREE.Group();
+  Object.values(trajDict).forEach(arr=>{
+    if (arr.length<2) return;
+    const pts = arr.map(o=>new THREE.Vector3(o.x*100,o.y*100,o.z*100));
+    group.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial()
+    ));
+  });
+  trajGroup = group;
+  scene.add(group);
 }
-
-// top-level state
- let highlight = null;   // <—— new
-
-function selectPaper(idx) {
-+  // ── highlight the chosen star ─────────────────────────────
-+  if (highlight) {                     // remove previous
-+    scene.remove(highlight);
-+    highlight.geometry.dispose();
-+    highlight.material.dispose();
-+  }
-+  const p = paperData[idx];
-+  const markerGeo = new THREE.SphereGeometry(2.5, 16, 16);   // small sphere
-+  const markerMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
-+  highlight = new THREE.Mesh(markerGeo, markerMat);
-+  highlight.position.set(p.x * 100, p.y * 100, p.z * 100);
-+  scene.add(highlight);
-
-   selectedIndex = idx;
--  const p = paperData[idx];
-   /* … existing tween / info-panel code … */
-}
-
 
 main();
